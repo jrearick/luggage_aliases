@@ -1,0 +1,12 @@
+name = luggage_aliases
+core = 7.x
+package = Luggage
+version = 7.x-1.0
+project = luggage_aliases
+dependencies[] = features
+dependencies[] = taxonomy
+features[features_api][] = api:2
+features[field_base][] = field_aliases
+features[field_base][] = field_people_aliases
+features[field_instance][] = node-people-field_people_aliases
+features[taxonomy][] = aliases
