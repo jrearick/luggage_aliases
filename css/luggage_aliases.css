@@ -1,0 +1,13 @@
+.media {
+    margin-top: 15px;
+    display: block;
+}
+
+.media-left,.media-body {
+    display: table-cell;
+    vertical-align: top;
+}
+
+.media-left {
+    padding-right: 10px;
+}

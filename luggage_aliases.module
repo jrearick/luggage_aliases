@@ -3,3 +3,138 @@
  * @file
  * Drupal needs this blank file.
  */
+
+const LUGGAGE_ALIASES_VOCAB_NAME = 'aliases';
+
+/**
+ * Implements hook_FORM_ID_form_alter()
+ */
+function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form_id) {
+  $form['#submit'][] = '_people_node_form_submit';
+}
+
+function _people_node_form_submit($form, &$form_state) {
+  $title = getTermName($form_state);
+  if(count($form_state['values']['field_people_aliases'][LANGUAGE_NONE]) == 0) {
+    // There is no alias assigned to this person
+    // Create alias
+    $t = taxonomy_get_term_by_name($title,LUGGAGE_ALIASES_VOCAB_NAME);
+    if(count($t) == 0) {
+      // There is no term in the vocabulary with the same name
+      // Create a new term
+      $form_state['values']['field_people_aliases'][LANGUAGE_NONE][] = (array)createTerm($title);
+    }
+  } else if($title !== trim($form['#node']->title)) {
+    // The person title has changed
+    // Rename alias
+    $t = taxonomy_get_term_by_name($form_state['values']['field_people_aliases'][LANGUAGE_NONE][0]['name'],LUGGAGE_ALIASES_VOCAB_NAME);
+    if(count($t) > 0) {
+      $t = array_slice($t,0,1)[0];
+      $t->name = $title;
+      taxonomy_term_save($t);
+    }
+  }
+}
+
+function getTermName($form_state) {
+  $title = $form_state['values']['field_people_title'][LANGUAGE_NONE][0]['value'] . ' ' .  $form_state['values']['field_people_first_name'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_middle_initial'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_last_name'][LANGUAGE_NONE][0]['value'];
+  return trim($title);
+}
+
+function createTerm($name) {
+  $term = new stdClass();
+  $term->vid = get_vocab_id(LUGGAGE_ALIASES_VOCAB_NAME)->vid;
+  $term->name = $name;
+  $term->description = '';
+  taxonomy_term_save($term);
+  return $term;
+}
+
+/**
+ * @param $vocab_machine_name
+ * @return null or vocabulary object
+ */
+function get_vocab_id($vocab_machine_name) {
+  $vocabularies = taxonomy_get_vocabularies();
+  $vocab = Null;
+  foreach($vocabularies as $v) {
+    if($v->machine_name == $vocab_machine_name) {
+      $vocab = $v;
+      break;
+    }
+  }
+  return $vocab;
+}
+
+/**
+ * Implements hook_field_formatter_info()
+ */
+function luggage_aliases_field_formatter_info() {
+  $info = array(
+    'author_list' => array(
+      'label' => t('Author List'),
+      'field types' => array('taxonomy_term_reference'),
+      'description' => t('Displays Title as a link and URL as plain text.'),
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_field_formatter_view()
+ */
+function luggage_aliases_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'author_list':
+      foreach ($items as $delta => $item) {
+//        $term = taxonomy_term_load($item['tid']);
+        $query = db_select('taxonomy_index','t')->fields('t');
+        $query->condition('t.tid',$item['tid'],'=');
+        $nodes = db_select('node','n')->fields('n')->condition('type','people');
+        $d = $query->join($nodes,'n','t.nid = n.nid');
+        $data = $query->execute()->fetchCol();
+        if($data) {
+          $user = node_load($data[0]);
+          $element[$delta] = array(
+            '#theme' => 'luggage_aliases_default',
+            '#image_src' => image_style_url('thumbnail',$user->field_people_image[LANGUAGE_NONE][0]['uri']),
+            '#firstname' => $user->field_people_first_name[LANGUAGE_NONE][0]['value'],
+            '#lastname' => $user->field_people_last_name[LANGUAGE_NONE][0]['value'],
+            '#position' => $user->field_people_position[LANGUAGE_NONE][0]['value'],
+            '#url' => $user->nid,
+            '#bio' => (isset($user->field_people_bio[LANGUAGE_NONE][0]['value']))?substr($user->field_people_bio[LANGUAGE_NONE][0]['value'],0,300) . '...':'',
+          );
+        }
+      }
+      drupal_add_css(drupal_get_path('module', 'luggage_aliases') . '/css/luggage_aliases.css');
+      break;
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function luggage_aliases_theme() {
+  return array(
+    'luggage_aliases_default' => array(
+      'template' => 'luggage_aliases_default',
+      'variables' => array(
+        'image_src' => Null,
+        'firstname' => Null,
+        'lastname' => Null,
+        'position' => Null,
+        'url' => Null,
+        'bio' => Null,
+      ),
+      'path' => drupal_get_path('module','luggage_aliases') . '/templates'
+    ),
+    'node__people' => array(
+      'render element' => 'content',
+      'base hook' => 'node',
+      'template' => 'node--people',
+      'path' => drupal_get_path('module','luggage_aliases') . '/templates'
+    )
+  );
+}
