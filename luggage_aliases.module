@@ -16,7 +16,7 @@ function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form
 }
 
 function _people_node_form_submit($form, &$form_state) {
-  $title = getTermName($form_state);
+  $title = _luggage_aliases_getTermName($form_state);
   if(count($form_state['values']['field_people_aliases'][LANGUAGE_NONE]) == 0) {
     // There is no alias assigned to this person
     // Create alias
@@ -24,7 +24,7 @@ function _people_node_form_submit($form, &$form_state) {
     if(count($t) == 0) {
       // There is no term in the vocabulary with the same name
       // Create a new term
-      $form_state['values']['field_people_aliases'][LANGUAGE_NONE][] = (array)createTerm($title);
+      $form_state['values']['field_people_aliases'][LANGUAGE_NONE][] = (array)_luggage_aliases_createTerm($title);
     }
   } else if($title !== trim($form['#node']->title)) {
     // The person title has changed
@@ -38,14 +38,14 @@ function _people_node_form_submit($form, &$form_state) {
   }
 }
 
-function getTermName($form_state) {
+function _luggage_aliases_getTermName($form_state) {
   $title = $form_state['values']['field_people_title'][LANGUAGE_NONE][0]['value'] . ' ' .  $form_state['values']['field_people_first_name'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_middle_initial'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_last_name'][LANGUAGE_NONE][0]['value'];
   return trim($title);
 }
 
-function createTerm($name) {
+function _luggage_aliases_createTerm($name) {
   $term = new stdClass();
-  $term->vid = get_vocab_id(LUGGAGE_ALIASES_VOCAB_NAME)->vid;
+  $term->vid = _luggage_aliases_get_vocab_id(LUGGAGE_ALIASES_VOCAB_NAME)->vid;
   $term->name = $name;
   $term->description = '';
   taxonomy_term_save($term);
@@ -56,7 +56,7 @@ function createTerm($name) {
  * @param $vocab_machine_name
  * @return null or vocabulary object
  */
-function get_vocab_id($vocab_machine_name) {
+function _luggage_aliases_get_vocab_id($vocab_machine_name) {
   $vocabularies = taxonomy_get_vocabularies();
   $vocab = Null;
   foreach($vocabularies as $v) {
