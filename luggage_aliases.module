@@ -168,9 +168,11 @@ function luggage_aliases_field_widget_info() {
 function luggage_aliases_process_node(&$variables) {
   if($variables['type'] == 'people') {
     $variables['authNames'] = array();
-    foreach($variables['field_people_aliases'][LANGUAGE_NONE] as $name) {
-      array_push($variables['authNames'],$name['tid']);
+    if(!empty($variables['field_people_aliases'])) {
+      foreach ($variables['field_people_aliases'][LANGUAGE_NONE] as $name) {
+        array_push($variables['authNames'], $name['tid']);
+      }
     }
-    $variables['authNames'] = implode('+',$variables['authNames']);
+    $variables['authNames'] = implode('+', $variables['authNames']);
   }
 }
