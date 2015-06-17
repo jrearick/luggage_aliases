@@ -147,18 +147,6 @@ function luggage_aliases_theme() {
 }
 
 /**
- * Implements hook_field_widget_info().
- */
-function luggage_aliases_field_widget_info() {
-  return array(
-    'author_widget' => array(
-      'label' => t('Author Widget'),
-      'field types' => array('taxonomy_term_reference'),
-    ),
-  );
-}
-
-/**
  * Implements hook_views_pre_view()
  */
 function luggage_aliases_views_pre_view(&$view, &$display_id, &$args) {
