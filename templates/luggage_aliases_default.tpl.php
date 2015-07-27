@@ -1,4 +1,4 @@
-<a href="<?php print $GLOBALS['base_url']; ?><?php if(!$aliasName) print '/node/' . $url; else print $url; ?>" class="media">
+<a href="<?php print $GLOBALS['base_url']; ?><?php if(!$aliasName) print "/" . drupal_get_path_alias('node/' . $url); else print $url; ?>" class="media">
     <?php if(!$aliasName): ?>
     <div class="media-left">
         <img src="<?php print $image_src; ?>">
