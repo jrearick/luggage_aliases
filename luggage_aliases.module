@@ -16,6 +16,9 @@ function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form
   $form['field_people_aliases']['#access'] = false;
 }
 
+/**
+ * Implements hook_node_update()
+ */
 function luggage_aliases_node_update($node) {
   if ($node->type == 'people') {
     // For aliases we want the default or zero index term to match the node title
