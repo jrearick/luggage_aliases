@@ -42,13 +42,6 @@ function luggage_aliases_node_update($node) {
   }
 }
 
-function _luggage_aliases_getTermName($form_state) {
-  $first_name = $form_state['values']['field_people_first_name'][LANGUAGE_NONE][0]['value'];
-  $middle_name = $form_state['values']['field_people_middle_initial'][LANGUAGE_NONE][0]['value'];
-  $title = $form_state['values']['field_people_title'][LANGUAGE_NONE][0]['value'] . ' ' .  $form_state['values']['field_people_first_name'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_middle_initial'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_last_name'][LANGUAGE_NONE][0]['value'];
-  return trim($title);
-}
-
 function _luggage_aliases_createTerm($name) {
   $term = new stdClass();
   $term->vid = _luggage_aliases_get_vocab_id(LUGGAGE_ALIASES_VOCAB_NAME)->vid;
