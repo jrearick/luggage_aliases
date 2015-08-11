@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * Updates existing people nodes with aliases if they are without them.
+ */
+function luggage_aliases_update_7100(&$sandbox) {
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['last_nid'] = 0;
+    $sandbox['limit'] = 4;
+    $sandbox['max'] = db_query('SELECT COUNT(DISTINCT nid) FROM {node} AS n WHERE n.type = :people', array('people' => 'people'))->fetchField() - 1;
+  }
+
+  $q = db_query('SELECT nid FROM {node} AS n WHERE n.type = :people LIMIT ' . $sandbox['limit']. '', array('people' => 'people'))->fetchCol();
+  $people_array = node_load_multiple($q,array());
+
+  foreach($people_array as $person) {
+    if (!isset($person->field_people_aliases[LANGUAGE_NONE][0])) {
+      // Create a new taxonomy term
+      $term = _luggage_aliases_createTerm($person->title);
+      $person->field_people_aliases = array(
+        LANGUAGE_NONE => array(
+          0 => (array)$term,
+        ),
+      );
+      field_attach_update('node', $person);
+    }
+    $sandbox['progress']++;
+  }
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+  $sandbox['last_nid'] = $person->nid;
+}
