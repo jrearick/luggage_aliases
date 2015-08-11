@@ -1,7 +1,7 @@
 name = luggage_aliases
 core = 7.x
 package = Luggage
-version = 7.x-1.1
+version = 7.x-1.2
 project = luggage_aliases
 dependencies[] = features
 dependencies[] = taxonomy
@@ -14,4 +14,4 @@ features[field_instance][] = node-people-field_people_aliases
 features[taxonomy][] = aliases
 features[views_view][] = author_block
 features_exclude[dependencies][ctools] = ctools
-mtime = 1437750519
+mtime = 1439299142
