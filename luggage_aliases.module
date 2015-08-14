@@ -10,6 +10,18 @@ include_once 'luggage_aliases.views_default.inc';
 const LUGGAGE_ALIASES_VOCAB_NAME = 'aliases';
 
 /**
+ * Implements hook_node_insert()
+ */
+function luggage_aliases_node_insert($node) {
+  if ($node->type == 'people') {
+    // Create default alias using node title
+    $term = _luggage_aliases_createTerm($node->title);
+    $node->field_people_aliases[LANGUAGE_NONE][] = (array)$term;
+    field_attach_update('node', $node);
+  }
+}
+
+/**
  * Implements hook_FORM_ID_form_alter()
  */
 function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form_id) {
