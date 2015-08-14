@@ -25,36 +25,36 @@ function luggage_aliases_node_insert($node) {
  * Implements hook_FORM_ID_form_alter()
  */
 function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['#submit'][] = '_luggage_aliases_people_node_form_submit';
   $form['field_people_aliases']['#access'] = false;
 }
 
-function _luggage_aliases_people_node_form_submit($form, &$form_state) {
-  $title = _luggage_aliases_getTermName($form_state);
-  if(count($form_state['values']['field_people_aliases'][LANGUAGE_NONE]) == 0) {
-    // There is no alias assigned to this person
-    // Create alias
-    $t = taxonomy_get_term_by_name($title,LUGGAGE_ALIASES_VOCAB_NAME);
-    if(count($t) == 0) {
-      // There is no term in the vocabulary with the same name
-      // Create a new term
-      $form_state['values']['field_people_aliases'][LANGUAGE_NONE][] = (array)_luggage_aliases_createTerm($title);
-    }
-  } else if($title !== trim($form['#node']->title)) {
-    // The person title has changed
-    // Rename alias
-    $t = taxonomy_get_term_by_name($form_state['values']['field_people_aliases'][LANGUAGE_NONE][0]['name'],LUGGAGE_ALIASES_VOCAB_NAME);
-    if(count($t) > 0) {
-      $t = array_slice($t,0,1)[0];
-      $t->name = $title;
-      taxonomy_term_save($t);
+/**
+ * Implements hook_node_update()
+ */
+function luggage_aliases_node_update($node) {
+  if ($node->type == 'people') {
+    // For aliases we want the default or zero index term to match the node title
+    // Therefore we need to determine if the user's title has changed.
+    $new_title = $node->title;
+    $default_alias = $node->field_people_aliases[LANGUAGE_NONE][0];
+    $original_title = $default_alias['name'];
+    if ($new_title != $original_title) {
+      // Then load and update the term
+      $term = taxonomy_term_load($default_alias['tid']);
+      if ($term) {
+        // Update the term entry
+        $term->name = $new_title;
+        taxonomy_term_save($term);
+
+        // Update the people node
+        $node->field_people_aliases[LANGUAGE_NONE][0] = (array)$term;
+        field_attach_update('node', $node);
+      } else {
+        // No term, this should never happen
+        // TODO: handle null return
+      }
     }
   }
-}
-
-function _luggage_aliases_getTermName($form_state) {
-  $title = $form_state['values']['field_people_title'][LANGUAGE_NONE][0]['value'] . ' ' .  $form_state['values']['field_people_first_name'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_middle_initial'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_last_name'][LANGUAGE_NONE][0]['value'];
-  return trim($title);
 }
 
 function _luggage_aliases_createTerm($name) {
