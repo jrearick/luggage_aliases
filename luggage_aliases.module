@@ -13,62 +13,87 @@ const LUGGAGE_ALIASES_VOCAB_NAME = 'aliases';
  * Implements hook_FORM_ID_form_alter()
  */
 function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['#submit'][] = '_luggage_aliases_people_node_form_submit';
-  $form['field_people_aliases']['#access'] = false;
-}
-
-function _luggage_aliases_people_node_form_submit($form, &$form_state) {
-  $title = _luggage_aliases_getTermName($form_state);
-  if(count($form_state['values']['field_people_aliases'][LANGUAGE_NONE]) == 0) {
-    // There is no alias assigned to this person
-    // Create alias
-    $t = taxonomy_get_term_by_name($title,LUGGAGE_ALIASES_VOCAB_NAME);
-    if(count($t) == 0) {
-      // There is no term in the vocabulary with the same name
-      // Create a new term
-      $form_state['values']['field_people_aliases'][LANGUAGE_NONE][] = (array)_luggage_aliases_createTerm($title);
-    }
-  } else if($title !== trim($form['#node']->title)) {
-    // The person title has changed
-    // Rename alias
-    $t = taxonomy_get_term_by_name($form_state['values']['field_people_aliases'][LANGUAGE_NONE][0]['name'],LUGGAGE_ALIASES_VOCAB_NAME);
-    if(count($t) > 0) {
-      $t = array_slice($t,0,1)[0];
-      $t->name = $title;
-      taxonomy_term_save($t);
-    }
-  }
-}
-
-function _luggage_aliases_getTermName($form_state) {
-  $title = $form_state['values']['field_people_title'][LANGUAGE_NONE][0]['value'] . ' ' .  $form_state['values']['field_people_first_name'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_middle_initial'][LANGUAGE_NONE][0]['value'] . ' ' . $form_state['values']['field_people_last_name'][LANGUAGE_NONE][0]['value'];
-  return trim($title);
-}
-
-function _luggage_aliases_createTerm($name) {
-  $term = new stdClass();
-  $term->vid = _luggage_aliases_get_vocab_id(LUGGAGE_ALIASES_VOCAB_NAME)->vid;
-  $term->name = $name;
-  $term->description = '';
-  taxonomy_term_save($term);
-  return $term;
+  // hide the aliases field from users.
+  // TODO: Wrap this around permissions to expose it to people who can edit aliases.
+  //$form['field_people_aliases']['#access'] = false;
 }
 
 /**
- * @param $vocab_machine_name
- * @return null or vocabulary object
+ * Implments hook_node_presave()
  */
-function _luggage_aliases_get_vocab_id($vocab_machine_name) {
-  $vocabularies = taxonomy_get_vocabularies();
-  $vocab = Null;
-  foreach($vocabularies as $v) {
-    if($v->machine_name == $vocab_machine_name) {
-      $vocab = $v;
-      break;
+function luggage_aliases_node_presave($node) {
+
+  if ($node->type == 'people') {
+    // Generate alias term when adding or updating a people node.
+    $new_name = luggage_aliases_generate_term_name($node);
+    $old_name = '';
+    if (!$node->is_new) {
+      $old_name = luggage_aliases_generate_term_name($node->original);
+    }
+
+    if (empty($node->field_people_aliases)) {
+      // Create the term if none exist.
+      $tid = luggage_aliases_create_term($new_name);
+
+      // add the term to the list of aliases in this node.
+      $term = taxonomy_term_load($tid);
+      $node->field_people_aliases['und'][] = (array) $term; // casting $term from object to array because it's expected later in node_save().
+    }
+    else if ($new_name != $old_name) {
+      // Otherwise update the term if the name has changed.
+      $term = taxonomy_term_load($node->field_people_aliases['und'][0]['tid']);
+      $term->name = $new_name;
+
+      taxonomy_term_save($term);
     }
   }
-  return $vocab;
 }
+
+/**
+ * Generate a term name based on the data provided in the node.
+ * @param $node - Node object
+ * @return - The formatted term name to be used when creating an alias term.
+ */
+function luggage_aliases_generate_term_name($node) {
+  // We're using the node's title and cleaning out the extra whitespaces.
+  return preg_replace('/\s+/', ' ', $node->title);
+}
+
+/**
+ * Creates a taxonomy term with the people profiles nid it is related to.
+ * @param $name - The name of the term to be saved.
+ * @param $nid - The nid of the people profile creating the term.
+ * @return - tid of the created term.
+ */
+function luggage_aliases_create_term($name) {
+
+  $term = new stdClass();
+  $term->vid = luggage_aliases_get_vocabulary_id(LUGGAGE_ALIASES_VOCAB_NAME);
+  $term->name = $name;
+
+  taxonomy_term_save($term);
+
+  return $term->tid;
+}
+
+/**
+ * @param $name - machine name of the vocabulary
+ * @return false or the vid for the named vocabulary
+ */
+function luggage_aliases_get_vocabulary_id($name) {
+  $vocabulary = taxonomy_vocabulary_machine_name_load($name);
+  if ($vocabulary) {
+    return $vocabulary->vid;
+  }
+
+  return FALSE;
+}
+
+
+
+
+
+
 
 /**
  * Implements hook_field_formatter_info()
