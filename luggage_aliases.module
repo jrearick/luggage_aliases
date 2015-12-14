@@ -15,7 +15,7 @@ const LUGGAGE_ALIASES_VOCAB_NAME = 'aliases';
 function luggage_aliases_form_people_node_form_alter(&$form, &$form_state, $form_id) {
   // hide the aliases field from users.
   // TODO: Wrap this around permissions to expose it to people who can edit aliases.
-  //$form['field_people_aliases']['#access'] = false;
+  $form['field_people_aliases']['#access'] = false;
 }
 
 /**
