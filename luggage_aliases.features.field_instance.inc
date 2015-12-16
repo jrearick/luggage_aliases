@@ -10,7 +10,7 @@
 function luggage_aliases_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-people-field_people_aliases'
+  // Exported field_instance: 'node-people-field_people_aliases'.
   $field_instances['node-people-field_people_aliases'] = array(
     'bundle' => 'people',
     'default_value' => NULL,
